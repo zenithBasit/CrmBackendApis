@@ -1177,33 +1177,65 @@ func (r *mutationResolver) DeleteVendor(ctx context.Context, id string) (*genera
 }
 
 // GetUsers is the resolver for the getUsers field.
-func (r *queryResolver) GetUsers(ctx context.Context) ([]*generated.User, error) {
-	// panic(fmt.Errorf("not implemented: GetUsers - getUsers"))
-
+func (r *queryResolver) GetUsers(ctx context.Context, filter *generated.UserFilter, pagination *generated.PaginationInput, sort *generated.UserSortInput) (*generated.UserPage, error) {
 	log.Println("GetUsers called")
-	// Get all users from the database
 
 	var users []models.User
-	if err := initializers.DB.
+	query := initializers.DB.Model(&models.User{}).
 		Joins("LEFT JOIN campaign_users ON users.id = campaign_users.user_id").
 		Joins("LEFT JOIN campaigns ON campaign_users.campaign_id = campaigns.id").
-		Preload("Campaigns").
-		Find(&users).Error; err != nil {
+		Preload("Campaigns")
 
+	// --- Apply Filters ---
+	if filter != nil {
+		if filter.Name != nil && *filter.Name != "" {
+			query = query.Where("users.name ILIKE ?", "%"+*filter.Name+"%")
+		}
+		if filter.Email != nil && *filter.Email != "" {
+			query = query.Where("users.email ILIKE ?", "%"+*filter.Email+"%")
+		}
+		if filter.Role != nil && *filter.Role != "" {
+			query = query.Where("users.role = ?", *filter.Role)
+		}
+		if filter.Search != nil && *filter.Search != "" {
+			query = query.Where("users.name ILIKE ? OR users.email ILIKE ?", "%"+*filter.Search+"%", "%"+*filter.Search+"%")
+		}
+	}
+
+	// --- Apply Sorting ---
+	if sort != nil {
+		order := "ASC"
+		if sort.Order == generated.SortOrderDesc {
+			order = "DESC"
+		}
+		switch sort.Field {
+		case generated.UserSortFieldName:
+			query = query.Order("users.name " + order)
+		case generated.UserSortFieldEmail:
+			query = query.Order("users.email " + order)
+		case generated.UserSortFieldRole:
+			query = query.Order("users.role " + order)
+		case generated.UserSortFieldCreatedAt:
+			query = query.Order("users.created_at " + order)
+		}
+	}
+
+	// --- Apply Pagination ---
+	var totalCount int64
+	query.Count(&totalCount) // Get total count before applying pagination
+
+	if pagination != nil {
+		offset := int((pagination.Page - 1) * pagination.PageSize)
+		query = query.Offset(offset).Limit(int(pagination.PageSize))
+	}
+
+	// Execute the query
+	if err := query.Find(&users).Error; err != nil {
 		log.Printf("Error fetching users: %v", err)
 		return nil, fmt.Errorf("internal error: failed to fetch users")
 	}
-	for _, user := range users {
-		log.Printf("User: %s, Campaign Count: %d", user.Name, len(user.Campaigns))
-		for _, campaign := range user.Campaigns {
-			log.Printf(" - Campaign: %s", campaign.CampaignName)
-		}
-	}
-	for _, user := range users {
-		log.Printf("User: %s, Campaigns: %v", user.Name, user.Campaigns)
-	}
 
-	// Map the users to the GraphQL response type
+	// Map to GraphQL response type
 	var result []*generated.User
 	for _, c := range users {
 		var campaigns []*generated.Campaign
@@ -1228,8 +1260,12 @@ func (r *queryResolver) GetUsers(ctx context.Context) ([]*generated.User, error)
 		})
 	}
 
-	return result, nil
+	return &generated.UserPage{
+		Items:      result,
+		TotalCount: int32(totalCount),
+	}, nil
 }
+
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, userID string) (*generated.User, error) {
@@ -1265,49 +1301,67 @@ func (r *queryResolver) GetUser(ctx context.Context, userID string) (*generated.
 }
 
 // GetCampaigns is the resolver for the getCampaigns field.
-func (r *queryResolver) GetCampaigns(ctx context.Context) ([]*generated.Campaign, error) {
-	// func (r *queryResolver) GetCampaigns(ctx context.Context) ([]*generated.Campaign, error) {
-	// Check user role
-	role, err := auth.GetUserRoleFromJWT(ctx)
-	fmt.Println("Role: ", role)
-	if err != nil {
-		return nil, fmt.Errorf("unauthorized")
-	}
-	if role != "ADMIN" && role != "MANAGER" {
-		return nil, fmt.Errorf("unauthorized to view campaigns")
-	}
-	var campaigns []models.Campaign
+func (r *queryResolver) GetCampaigns(ctx context.Context, filter *generated.CampaignFilter, pagination *generated.PaginationInput, sort *generated.CampaignSortInput) (*generated.CampaignPage, error) {
+	log.Println("GetCampaigns called")
 
-	// Load campaigns along with associated users
-	if err := initializers.DB.Preload("Users").Find(&campaigns).Error; err != nil {
+	var campaigns []models.Campaign
+	query := initializers.DB.Model(&models.Campaign{})
+
+	// --- Apply Filters ---
+	if filter != nil {
+		if filter.CampaignName != nil && *filter.CampaignName != "" {
+			query = query.Where("campaigns.campaign_name ILIKE ?", "%"+*filter.CampaignName+"%")
+		}
+		if filter.CampaignCountry != nil && *filter.CampaignCountry != "" {
+			query = query.Where("campaigns.campaign_country = ?", *filter.CampaignCountry)
+		}
+	}
+
+	// --- Apply Sorting ---
+	if sort != nil {
+		order := "ASC"
+		if sort.Order == generated.SortOrderDesc {
+			order = "DESC"
+		}
+		switch sort.Field {
+		case generated.CampaignSortFieldCampaignName:
+			query = query.Order("campaigns.campaign_name " + order)
+		case generated.CampaignSortFieldCreatedAt:
+			query = query.Order("campaigns.created_at " + order)
+		}
+	}
+
+	// --- Apply Pagination ---
+	var totalCount int64
+	query.Count(&totalCount) // Get total count before applying pagination
+
+	if pagination != nil {
+		offset := (pagination.Page - 1) * pagination.PageSize
+		query = query.Offset(int(offset)).Limit(int(pagination.PageSize))
+	}
+
+	// Execute the query
+	if err := query.Find(&campaigns).Error; err != nil {
 		log.Printf("Error fetching campaigns: %v", err)
 		return nil, fmt.Errorf("internal error: failed to fetch campaigns")
 	}
 
-	// Convert models.Campaign to generated.Campaign
+	// Map to GraphQL response type
 	var result []*generated.Campaign
 	for _, c := range campaigns {
-		var users []*generated.User
-		for _, u := range c.Users {
-			users = append(users, &generated.User{
-				UserID: fmt.Sprintf("%d", u.ID),
-				Name:   u.Name,
-				Email:  u.Email,
-				Phone:  u.Phone,
-			})
-		}
 		result = append(result, &generated.Campaign{
-			CampaignID:       fmt.Sprintf("%d", c.ID),
-			CampaignName:     c.CampaignName,
-			CampaignCountry:  c.CampaignCountry,
-			CampaignRegion:   c.CampaignRegion,
-			IndustryTargeted: c.IndustryTargeted,
-			Users:            users, // Include users in the response
+			CampaignID:      fmt.Sprintf("%d", c.ID),
+			CampaignName:    c.CampaignName,
+			CampaignCountry: c.CampaignCountry,
 		})
 	}
 
-	return result, nil
+	return &generated.CampaignPage{
+		Items:      result,
+		TotalCount: int32(totalCount),
+	}, nil
 }
+
 
 // GetCampaign is the resolver for the getCampaign field.
 func (r *queryResolver) GetCampaign(ctx context.Context, campaignID string) (*generated.Campaign, error) {
@@ -1315,108 +1369,67 @@ func (r *queryResolver) GetCampaign(ctx context.Context, campaignID string) (*ge
 }
 
 // GetAllLeads is the resolver for the getAllLeads field.
-func (r *queryResolver) GetAllLeads(ctx context.Context) ([]*generated.Lead, error) {
-	if _, err := initializers.DB.DB(); err != nil {
-		log.Fatalf("Database connection error: %v", err)
-	} else {
-		log.Println("Database connected successfully:")
-	}
+func (r *queryResolver) GetAllLeads(ctx context.Context, filter *generated.LeadFilter, pagination *generated.PaginationInput, sort *generated.LeadSortInput) (*generated.LeadPage, error) {
+	log.Println("GetAllLeads called")
 
 	var leads []models.Lead
+	query := initializers.DB.Model(&models.Lead{})
 
-	// Fetch all leads from the database
-	// 	initializers.DB.Find(&leads):
-	// Fetches all records from the leads table and stores them in the leads slice.
-	// Preload("Activities"):
-	// Eagerly loads the associated Activities for each lead (to avoid separate queries for activities).
-	// Ensures that the lead.Activities field is populated when leads are fetched.
-	// Preload("Organization"):
-	// Eagerly loads the associated Organization for each lead.
-	// Ensures that the lead.Organization field is populated when leads are fetched.
-	// Preload("Campaign"):
-	// Eagerly loads the associated Campaign for each lead.
-	// Ensures that the lead.Campaign field is populated when leads are fetched.
-	// Preload("User"):
-	// Eagerly loads the associated User for each lead.
-	// Ensures that the lead.User field is populated when leads are fetched.
-	if err := initializers.DB.
-		Preload("Activities").
-		Preload("Organization").
-		Preload("Campaign").
-		Preload("Creator").
-		Preload("Assignee").
-		Find(&leads).Error; err != nil {
+	// --- Apply Filters ---
+	if filter != nil {
+		if filter.Name != nil && *filter.Name != "" {
+			query = query.Where("leads.name ILIKE ?", "%"+*filter.Name+"%")
+		}
+		if filter.Email != nil && *filter.Email != "" {
+			query = query.Where("leads.email ILIKE ?", "%"+*filter.Email+"%")
+		}
+	}
+
+	// --- Apply Sorting ---
+	if sort != nil {
+		order := "ASC"
+		if sort.Order == generated.SortOrderDesc {
+			order = "DESC"
+		}
+		switch sort.Field {
+		case generated.LeadSortFieldLeadName:
+			query = query.Order("leads.name " + order)
+		case generated.LeadSortFieldCreatedAt:
+			query = query.Order("leads.created_at " + order)
+		}
+	}
+
+	// --- Apply Pagination ---
+	var totalCount int64
+	query.Count(&totalCount) // Get total count before applying pagination
+
+	if pagination != nil {
+		offset := (pagination.Page - 1) * pagination.PageSize
+		query = query.Offset(int(offset)).Limit(int(pagination.PageSize))
+	}
+
+	// Execute the query
+	if err := query.Find(&leads).Error; err != nil {
 		log.Printf("Error fetching leads: %v", err)
+		return nil, fmt.Errorf("internal error: failed to fetch leads")
 	}
 
-	// Map the leads from the database model to the GraphQL response type
+	// Map to GraphQL response type
 	var result []*generated.Lead
-	for _, lead := range leads {
-		// For each lead, fetch its activities
-		var activities []*generated.Activity
-		for _, activity := range lead.Activities {
-			activities = append(activities, &generated.Activity{
-				ActivityID:           activity.ActivityID,
-				LeadID:               activity.LeadID,
-				ActivityType:         activity.ActivityType,
-				DateTime:             activity.DateTime,
-				CommunicationChannel: activity.CommunicationChannel,
-				ContentNotes:         activity.ContentNotes,
-				ParticipantDetails:   activity.ParticipantDetails,
-				FollowUpActions:      activity.FollowUpActions,
-			})
-		}
-
-		// Map Organization
-		var organization *generated.Organization
-		if lead.OrganizationID != "" {
-			organization = &generated.Organization{
-				ID:               fmt.Sprintf("%d", lead.Organization.ID),
-				OrganizationName: lead.Organization.OrganizationName,
-			}
-		}
-
-		// Map Campaign
-		var campaign *generated.Campaign
-		if lead.CampaignID != "" {
-			campaign = &generated.Campaign{
-				CampaignID:       fmt.Sprintf("%d", lead.Campaign.ID),
-				CampaignName:     lead.Campaign.CampaignName,
-				CampaignCountry:  lead.Campaign.CampaignCountry,
-				CampaignRegion:   lead.Campaign.CampaignRegion,
-				IndustryTargeted: lead.Campaign.IndustryTargeted,
-			}
-		}
-
-		fmt.Println("creator:", lead.Creator.ID)
-		fmt.Println("assignee:", lead.Assignee.ID)
-
+	for _, c := range leads {
 		result = append(result, &generated.Lead{
-			LeadID:     lead.LeadID,
-			FirstName:  lead.FirstName,
-			LastName:   lead.LastName,
-			LinkedIn:   lead.LinkedIn,
-			Country:    lead.Country,
-			Phone:      lead.Phone,
-			LeadSource: lead.LeadSource,
-			LeadCreatedBy: &generated.User{
-				UserID: fmt.Sprintf("%d", lead.Creator.ID),
-			},
-			LeadAssignedTo: &generated.User{
-				UserID: fmt.Sprintf("%d", lead.Assignee.ID),
-			},
-			LeadStage:          lead.LeadStage,
-			LeadPriority:       lead.LeadPriority,
-			LeadNotes:          lead.LeadNotes,
-			InitialContactDate: lead.InitialContactDate,
-			Activities:         activities,
-			Organization:       organization,
-			Campaign:           campaign,
+			LeadID: c.LeadID,
+			FirstName:   c.FirstName,
+			Email:  c.Email,
 		})
-
 	}
-	return result, nil
+
+	return &generated.LeadPage{
+		Items:      result,
+		TotalCount: int32(totalCount),
+	}, nil
 }
+
 
 // GetOneLead is the resolver for the getOneLead field.
 func (r *queryResolver) GetOneLead(ctx context.Context, leadID string) (*generated.Lead, error) {
@@ -1513,13 +1526,57 @@ func (r *queryResolver) Me(ctx context.Context) (*generated.User, error) {
 
 // GetOrganizations is the resolver for the getOrganizations field.
 func (r *queryResolver) GetOrganizations(ctx context.Context) ([]*generated.Organization, error) {
-	panic(fmt.Errorf("not implemented: GetOrganizations - getOrganizations"))
+	// Check database connection
+	if _, err := initializers.DB.DB(); err != nil {
+		log.Fatalf("Database connection error: %v", err)
+		return nil, err
+	}
+
+	var organizations []models.Organization
+
+	// Fetch all organizations
+	if err := initializers.DB.Find(&organizations).Error; err != nil {
+		log.Printf("Error fetching organizations: %v", err)
+		return nil, err
+	}
+
+	// Convert to GraphQL response type
+	var result []*generated.Organization
+	for _, org := range organizations {
+		result = append(result, &generated.Organization{
+			ID:               fmt.Sprintf("%d", org.ID),
+			OrganizationName: org.OrganizationName,
+			Country:          org.Country,
+		})
+	}
+
+	return result, nil
 }
 
 // GetOrganizationByID is the resolver for the getOrganizationByID field.
 func (r *queryResolver) GetOrganizationByID(ctx context.Context, id string) (*generated.Organization, error) {
-	panic(fmt.Errorf("not implemented: GetOrganizationByID - getOrganizationByID"))
+	// Check database connection
+	if _, err := initializers.DB.DB(); err != nil {
+		log.Fatalf("Database connection error: %v", err)
+		return nil, err
+	}
+
+	var organization models.Organization
+
+	// Fetch organization by ID
+	if err := initializers.DB.First(&organization, "id = ?", id).Error; err != nil {
+		log.Printf("Error fetching organization by ID: %v", err)
+		return nil, fmt.Errorf("organization not found")
+	}
+
+	// Convert to GraphQL response type
+	return &generated.Organization{
+		ID:               fmt.Sprintf("%d", organization.ID),
+		OrganizationName: organization.OrganizationName,
+		Country:          organization.Country,
+	}, nil
 }
+
 
 // GetResourceProfiles is the resolver for the getResourceProfiles field.
 func (r *queryResolver) GetResourceProfiles(ctx context.Context, filter *generated.ResourceProfileFilter, pagination *generated.PaginationInput, sort *generated.ResourceProfileSortInput) (*generated.ResourceProfilePage, error) {

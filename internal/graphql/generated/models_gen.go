@@ -34,6 +34,21 @@ type Campaign struct {
 	Leads            []*Lead `json:"leads"`
 }
 
+type CampaignFilter struct {
+	CampaignName    *string `json:"campaignName,omitempty"`
+	CampaignCountry *string `json:"campaignCountry,omitempty"`
+}
+
+type CampaignPage struct {
+	Items      []*Campaign `json:"items"`
+	TotalCount int32       `json:"totalCount"`
+}
+
+type CampaignSortInput struct {
+	Field CampaignSortField `json:"field"`
+	Order SortOrder         `json:"order"`
+}
+
 type Contact struct {
 	ID          string  `json:"id"`
 	CreatedAt   string  `json:"createdAt"`
@@ -182,6 +197,21 @@ type Lead struct {
 	Organization       *Organization `json:"organization"`
 	Campaign           *Campaign     `json:"campaign"`
 	Activities         []*Activity   `json:"activities"`
+}
+
+type LeadFilter struct {
+	Name  *string `json:"name,omitempty"`
+	Email *string `json:"email,omitempty"`
+}
+
+type LeadPage struct {
+	Items      []*Lead `json:"items"`
+	TotalCount int32   `json:"totalCount"`
+}
+
+type LeadSortInput struct {
+	Field LeadSortField `json:"field"`
+	Order SortOrder     `json:"order"`
 }
 
 type Mutation struct {
@@ -339,6 +369,23 @@ type User struct {
 	Campaigns []*Campaign `json:"campaigns"`
 }
 
+type UserFilter struct {
+	Name   *string `json:"name,omitempty"`
+	Email  *string `json:"email,omitempty"`
+	Role   *string `json:"role,omitempty"`
+	Search *string `json:"search,omitempty"`
+}
+
+type UserPage struct {
+	Items      []*User `json:"items"`
+	TotalCount int32   `json:"totalCount"`
+}
+
+type UserSortInput struct {
+	Field UserSortField `json:"field"`
+	Order SortOrder     `json:"order"`
+}
+
 type Vendor struct {
 	ID                 string               `json:"id"`
 	CreatedAt          string               `json:"createdAt"`
@@ -371,6 +418,47 @@ type VendorPage struct {
 type VendorSortInput struct {
 	Field VendorSortField `json:"field"`
 	Order SortOrder       `json:"order"`
+}
+
+type CampaignSortField string
+
+const (
+	CampaignSortFieldCampaignName CampaignSortField = "CAMPAIGN_NAME"
+	CampaignSortFieldCreatedAt    CampaignSortField = "CREATED_AT"
+)
+
+var AllCampaignSortField = []CampaignSortField{
+	CampaignSortFieldCampaignName,
+	CampaignSortFieldCreatedAt,
+}
+
+func (e CampaignSortField) IsValid() bool {
+	switch e {
+	case CampaignSortFieldCampaignName, CampaignSortFieldCreatedAt:
+		return true
+	}
+	return false
+}
+
+func (e CampaignSortField) String() string {
+	return string(e)
+}
+
+func (e *CampaignSortField) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CampaignSortField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CampaignSortField", str)
+	}
+	return nil
+}
+
+func (e CampaignSortField) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type LeadPriority string
@@ -413,6 +501,47 @@ func (e *LeadPriority) UnmarshalGQL(v any) error {
 }
 
 func (e LeadPriority) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type LeadSortField string
+
+const (
+	LeadSortFieldLeadName  LeadSortField = "LEAD_NAME"
+	LeadSortFieldCreatedAt LeadSortField = "CREATED_AT"
+)
+
+var AllLeadSortField = []LeadSortField{
+	LeadSortFieldLeadName,
+	LeadSortFieldCreatedAt,
+}
+
+func (e LeadSortField) IsValid() bool {
+	switch e {
+	case LeadSortFieldLeadName, LeadSortFieldCreatedAt:
+		return true
+	}
+	return false
+}
+
+func (e LeadSortField) String() string {
+	return string(e)
+}
+
+func (e *LeadSortField) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = LeadSortField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid LeadSortField", str)
+	}
+	return nil
+}
+
+func (e LeadSortField) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -724,6 +853,51 @@ func (e *UserRole) UnmarshalGQL(v any) error {
 }
 
 func (e UserRole) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UserSortField string
+
+const (
+	UserSortFieldCreatedAt UserSortField = "createdAt"
+	UserSortFieldName      UserSortField = "name"
+	UserSortFieldEmail     UserSortField = "email"
+	UserSortFieldRole      UserSortField = "role"
+)
+
+var AllUserSortField = []UserSortField{
+	UserSortFieldCreatedAt,
+	UserSortFieldName,
+	UserSortFieldEmail,
+	UserSortFieldRole,
+}
+
+func (e UserSortField) IsValid() bool {
+	switch e {
+	case UserSortFieldCreatedAt, UserSortFieldName, UserSortFieldEmail, UserSortFieldRole:
+		return true
+	}
+	return false
+}
+
+func (e UserSortField) String() string {
+	return string(e)
+}
+
+func (e *UserSortField) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UserSortField(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UserSortField", str)
+	}
+	return nil
+}
+
+func (e UserSortField) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

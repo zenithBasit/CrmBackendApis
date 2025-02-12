@@ -71,6 +71,11 @@ type ComplexityRoot struct {
 		Users            func(childComplexity int) int
 	}
 
+	CampaignPage struct {
+		Items      func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	Contact struct {
 		CreatedAt   func(childComplexity int) int
 		Email       func(childComplexity int) int
@@ -110,6 +115,11 @@ type ComplexityRoot struct {
 		LinkedIn           func(childComplexity int) int
 		Organization       func(childComplexity int) int
 		Phone              func(childComplexity int) int
+	}
+
+	LeadPage struct {
+		Items      func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -168,16 +178,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		GetAllLeads         func(childComplexity int) int
+		GetAllLeads         func(childComplexity int, filter *LeadFilter, pagination *PaginationInput, sort *LeadSortInput) int
 		GetCampaign         func(childComplexity int, campaignID string) int
-		GetCampaigns        func(childComplexity int) int
+		GetCampaigns        func(childComplexity int, filter *CampaignFilter, pagination *PaginationInput, sort *CampaignSortInput) int
 		GetOneLead          func(childComplexity int, leadID string) int
 		GetOrganizationByID func(childComplexity int, id string) int
 		GetOrganizations    func(childComplexity int) int
 		GetResourceProfile  func(childComplexity int, id string) int
 		GetResourceProfiles func(childComplexity int, filter *ResourceProfileFilter, pagination *PaginationInput, sort *ResourceProfileSortInput) int
 		GetUser             func(childComplexity int, userID string) int
-		GetUsers            func(childComplexity int) int
+		GetUsers            func(childComplexity int, filter *UserFilter, pagination *PaginationInput, sort *UserSortInput) int
 		GetVendor           func(childComplexity int, id string) int
 		GetVendors          func(childComplexity int, filter *VendorFilter, pagination *PaginationInput, sort *VendorSortInput) int
 		Me                  func(childComplexity int) int
@@ -222,6 +232,11 @@ type ComplexityRoot struct {
 		Phone     func(childComplexity int) int
 		Role      func(childComplexity int) int
 		UserID    func(childComplexity int) int
+	}
+
+	UserPage struct {
+		Items      func(childComplexity int) int
+		TotalCount func(childComplexity int) int
 	}
 
 	Vendor struct {
@@ -271,11 +286,11 @@ type MutationResolver interface {
 	DeleteVendor(ctx context.Context, id string) (*Vendor, error)
 }
 type QueryResolver interface {
-	GetUsers(ctx context.Context) ([]*User, error)
+	GetUsers(ctx context.Context, filter *UserFilter, pagination *PaginationInput, sort *UserSortInput) (*UserPage, error)
 	GetUser(ctx context.Context, userID string) (*User, error)
-	GetCampaigns(ctx context.Context) ([]*Campaign, error)
+	GetCampaigns(ctx context.Context, filter *CampaignFilter, pagination *PaginationInput, sort *CampaignSortInput) (*CampaignPage, error)
 	GetCampaign(ctx context.Context, campaignID string) (*Campaign, error)
-	GetAllLeads(ctx context.Context) ([]*Lead, error)
+	GetAllLeads(ctx context.Context, filter *LeadFilter, pagination *PaginationInput, sort *LeadSortInput) (*LeadPage, error)
 	GetOneLead(ctx context.Context, leadID string) (*Lead, error)
 	Me(ctx context.Context) (*User, error)
 	GetOrganizations(ctx context.Context) ([]*Organization, error)
@@ -423,6 +438,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Campaign.Users(childComplexity), true
+
+	case "CampaignPage.items":
+		if e.complexity.CampaignPage.Items == nil {
+			break
+		}
+
+		return e.complexity.CampaignPage.Items(childComplexity), true
+
+	case "CampaignPage.totalCount":
+		if e.complexity.CampaignPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.CampaignPage.TotalCount(childComplexity), true
 
 	case "Contact.createdAt":
 		if e.complexity.Contact.CreatedAt == nil {
@@ -647,6 +676,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Lead.Phone(childComplexity), true
+
+	case "LeadPage.items":
+		if e.complexity.LeadPage.Items == nil {
+			break
+		}
+
+		return e.complexity.LeadPage.Items(childComplexity), true
+
+	case "LeadPage.totalCount":
+		if e.complexity.LeadPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.LeadPage.TotalCount(childComplexity), true
 
 	case "Mutation.addUserToCampaign":
 		if e.complexity.Mutation.AddUserToCampaign == nil {
@@ -1064,7 +1107,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.GetAllLeads(childComplexity), true
+		args, err := ec.field_Query_getAllLeads_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetAllLeads(childComplexity, args["filter"].(*LeadFilter), args["pagination"].(*PaginationInput), args["sort"].(*LeadSortInput)), true
 
 	case "Query.getCampaign":
 		if e.complexity.Query.GetCampaign == nil {
@@ -1083,7 +1131,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.GetCampaigns(childComplexity), true
+		args, err := ec.field_Query_getCampaigns_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetCampaigns(childComplexity, args["filter"].(*CampaignFilter), args["pagination"].(*PaginationInput), args["sort"].(*CampaignSortInput)), true
 
 	case "Query.getOneLead":
 		if e.complexity.Query.GetOneLead == nil {
@@ -1157,7 +1210,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.GetUsers(childComplexity), true
+		args, err := ec.field_Query_getUsers_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetUsers(childComplexity, args["filter"].(*UserFilter), args["pagination"].(*PaginationInput), args["sort"].(*UserSortInput)), true
 
 	case "Query.getVendor":
 		if e.complexity.Query.GetVendor == nil {
@@ -1393,6 +1451,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.UserID(childComplexity), true
 
+	case "UserPage.items":
+		if e.complexity.UserPage.Items == nil {
+			break
+		}
+
+		return e.complexity.UserPage.Items(childComplexity), true
+
+	case "UserPage.totalCount":
+		if e.complexity.UserPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.UserPage.TotalCount(childComplexity), true
+
 	case "Vendor.address":
 		if e.complexity.Vendor.Address == nil {
 			break
@@ -1506,6 +1578,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
+		ec.unmarshalInputCampaignFilter,
+		ec.unmarshalInputCampaignSortInput,
 		ec.unmarshalInputCreateActivityInput,
 		ec.unmarshalInputCreateCampaignInput,
 		ec.unmarshalInputCreateDealInput,
@@ -1515,6 +1589,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateResourceProfileInput,
 		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputCreateVendorInput,
+		ec.unmarshalInputLeadFilter,
+		ec.unmarshalInputLeadSortInput,
 		ec.unmarshalInputPaginationInput,
 		ec.unmarshalInputResourceProfileFilter,
 		ec.unmarshalInputResourceProfileSortInput,
@@ -1523,6 +1599,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputUpdateResourceProfileInput,
 		ec.unmarshalInputUpdateUserInput,
 		ec.unmarshalInputUpdateVendorInput,
+		ec.unmarshalInputUserFilter,
+		ec.unmarshalInputUserSortInput,
 		ec.unmarshalInputVendorFilter,
 		ec.unmarshalInputVendorSortInput,
 	)
@@ -1623,13 +1701,25 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "../schema/schema.graphqls", Input: `type Query {
-  getUsers: [User!]!
+  getUsers(
+    filter: UserFilter
+    pagination: PaginationInput
+    sort: UserSortInput
+  ): UserPage!
   getUser(userID: ID!): User
 
-  getCampaigns: [Campaign!]!
+  getCampaigns(
+    filter: CampaignFilter, 
+    pagination: PaginationInput, 
+    sort: CampaignSortInput
+  ): CampaignPage!
   getCampaign(campaignID: ID!): Campaign
 
-  getAllLeads: [Lead!]!
+  getAllLeads(
+    filter: LeadFilter, 
+    pagination: PaginationInput, 
+    sort: LeadSortInput
+  ): LeadPage!
   getOneLead(lead_id: String!): Lead
   me: User
 
@@ -2053,6 +2143,23 @@ input UpdateVendorInput {
 
 # --- Filter Inputs ---
 
+input UserFilter {
+  name: String
+  email: String
+  role: String
+  search: String # Search across name, email, etc.
+}
+
+input LeadFilter {
+  name: String
+  email: String
+}
+
+input CampaignFilter {
+  campaignName: String
+  campaignCountry: String
+}
+
 input ResourceProfileFilter {
   type: ResourceType
   firstName: String
@@ -2085,6 +2192,21 @@ type ResourceProfilePage {
   totalCount: Int!
 }
 
+type UserPage {
+  items: [User!]!
+  totalCount: Int!
+}
+
+type CampaignPage {
+  items: [Campaign!]!
+  totalCount: Int!
+}
+
+type LeadPage {
+  items: [Lead!]!
+  totalCount: Int!
+}
+
 type VendorPage {
   items: [Vendor!]!
   totalCount: Int! # Corrected: Added the type
@@ -2095,6 +2217,35 @@ type VendorPage {
 enum SortOrder {
   ASC
   DESC
+}
+
+input UserSortInput {
+  field: UserSortField!
+  order: SortOrder!
+}
+enum UserSortField {
+  createdAt
+  name
+  email
+  role
+}
+
+input CampaignSortInput {
+  field: CampaignSortField!
+  order: SortOrder!
+}
+enum CampaignSortField {
+  CAMPAIGN_NAME
+  CREATED_AT
+}
+
+input LeadSortInput {
+  field: LeadSortField!
+  order: SortOrder!
+}
+enum LeadSortField {
+  LEAD_NAME
+  CREATED_AT
 }
 
 input ResourceProfileSortInput {
@@ -2801,6 +2952,65 @@ func (ec *executionContext) field_Query___type_argsName(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Query_getAllLeads_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getAllLeads_argsFilter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	arg1, err := ec.field_Query_getAllLeads_argsPagination(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["pagination"] = arg1
+	arg2, err := ec.field_Query_getAllLeads_argsSort(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sort"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_getAllLeads_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*LeadFilter, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalOLeadFilter2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadFilter(ctx, tmp)
+	}
+
+	var zeroVal *LeadFilter
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getAllLeads_argsPagination(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*PaginationInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+	if tmp, ok := rawArgs["pagination"]; ok {
+		return ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐPaginationInput(ctx, tmp)
+	}
+
+	var zeroVal *PaginationInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getAllLeads_argsSort(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*LeadSortInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+	if tmp, ok := rawArgs["sort"]; ok {
+		return ec.unmarshalOLeadSortInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadSortInput(ctx, tmp)
+	}
+
+	var zeroVal *LeadSortInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Query_getCampaign_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2821,6 +3031,65 @@ func (ec *executionContext) field_Query_getCampaign_argsCampaignID(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getCampaigns_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getCampaigns_argsFilter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	arg1, err := ec.field_Query_getCampaigns_argsPagination(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["pagination"] = arg1
+	arg2, err := ec.field_Query_getCampaigns_argsSort(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sort"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_getCampaigns_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*CampaignFilter, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalOCampaignFilter2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignFilter(ctx, tmp)
+	}
+
+	var zeroVal *CampaignFilter
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getCampaigns_argsPagination(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*PaginationInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+	if tmp, ok := rawArgs["pagination"]; ok {
+		return ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐPaginationInput(ctx, tmp)
+	}
+
+	var zeroVal *PaginationInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getCampaigns_argsSort(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*CampaignSortInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+	if tmp, ok := rawArgs["sort"]; ok {
+		return ec.unmarshalOCampaignSortInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignSortInput(ctx, tmp)
+	}
+
+	var zeroVal *CampaignSortInput
 	return zeroVal, nil
 }
 
@@ -2972,6 +3241,65 @@ func (ec *executionContext) field_Query_getUser_argsUserID(
 	}
 
 	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getUsers_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getUsers_argsFilter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	arg1, err := ec.field_Query_getUsers_argsPagination(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["pagination"] = arg1
+	arg2, err := ec.field_Query_getUsers_argsSort(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["sort"] = arg2
+	return args, nil
+}
+func (ec *executionContext) field_Query_getUsers_argsFilter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*UserFilter, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+	if tmp, ok := rawArgs["filter"]; ok {
+		return ec.unmarshalOUserFilter2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserFilter(ctx, tmp)
+	}
+
+	var zeroVal *UserFilter
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getUsers_argsPagination(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*PaginationInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("pagination"))
+	if tmp, ok := rawArgs["pagination"]; ok {
+		return ec.unmarshalOPaginationInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐPaginationInput(ctx, tmp)
+	}
+
+	var zeroVal *PaginationInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getUsers_argsSort(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*UserSortInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("sort"))
+	if tmp, ok := rawArgs["sort"]; ok {
+		return ec.unmarshalOUserSortInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserSortInput(ctx, tmp)
+	}
+
+	var zeroVal *UserSortInput
 	return zeroVal, nil
 }
 
@@ -3972,6 +4300,110 @@ func (ec *executionContext) fieldContext_Campaign_leads(_ context.Context, field
 				return ec.fieldContext_Lead_activities(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Lead", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CampaignPage_items(ctx context.Context, field graphql.CollectedField, obj *CampaignPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CampaignPage_items(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Items, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Campaign)
+	fc.Result = res
+	return ec.marshalNCampaign2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CampaignPage_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CampaignPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "campaignID":
+				return ec.fieldContext_Campaign_campaignID(ctx, field)
+			case "campaignName":
+				return ec.fieldContext_Campaign_campaignName(ctx, field)
+			case "campaignCountry":
+				return ec.fieldContext_Campaign_campaignCountry(ctx, field)
+			case "campaignRegion":
+				return ec.fieldContext_Campaign_campaignRegion(ctx, field)
+			case "industryTargeted":
+				return ec.fieldContext_Campaign_industryTargeted(ctx, field)
+			case "users":
+				return ec.fieldContext_Campaign_users(ctx, field)
+			case "leads":
+				return ec.fieldContext_Campaign_leads(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Campaign", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CampaignPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *CampaignPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CampaignPage_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CampaignPage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CampaignPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5464,6 +5896,130 @@ func (ec *executionContext) fieldContext_Lead_activities(_ context.Context, fiel
 				return ec.fieldContext_Activity_leadId(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Activity", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LeadPage_items(ctx context.Context, field graphql.CollectedField, obj *LeadPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LeadPage_items(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Items, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Lead)
+	fc.Result = res
+	return ec.marshalNLead2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LeadPage_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LeadPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "leadID":
+				return ec.fieldContext_Lead_leadID(ctx, field)
+			case "firstName":
+				return ec.fieldContext_Lead_firstName(ctx, field)
+			case "lastName":
+				return ec.fieldContext_Lead_lastName(ctx, field)
+			case "email":
+				return ec.fieldContext_Lead_email(ctx, field)
+			case "linkedIn":
+				return ec.fieldContext_Lead_linkedIn(ctx, field)
+			case "country":
+				return ec.fieldContext_Lead_country(ctx, field)
+			case "phone":
+				return ec.fieldContext_Lead_phone(ctx, field)
+			case "leadSource":
+				return ec.fieldContext_Lead_leadSource(ctx, field)
+			case "initialContactDate":
+				return ec.fieldContext_Lead_initialContactDate(ctx, field)
+			case "leadCreatedBy":
+				return ec.fieldContext_Lead_leadCreatedBy(ctx, field)
+			case "leadAssignedTo":
+				return ec.fieldContext_Lead_leadAssignedTo(ctx, field)
+			case "leadStage":
+				return ec.fieldContext_Lead_leadStage(ctx, field)
+			case "leadNotes":
+				return ec.fieldContext_Lead_leadNotes(ctx, field)
+			case "leadPriority":
+				return ec.fieldContext_Lead_leadPriority(ctx, field)
+			case "organization":
+				return ec.fieldContext_Lead_organization(ctx, field)
+			case "campaign":
+				return ec.fieldContext_Lead_campaign(ctx, field)
+			case "activities":
+				return ec.fieldContext_Lead_activities(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Lead", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LeadPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *LeadPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LeadPage_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LeadPage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LeadPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8162,7 +8718,7 @@ func (ec *executionContext) _Query_getUsers(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetUsers(rctx)
+		return ec.resolvers.Query().GetUsers(rctx, fc.Args["filter"].(*UserFilter), fc.Args["pagination"].(*PaginationInput), fc.Args["sort"].(*UserSortInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8174,12 +8730,12 @@ func (ec *executionContext) _Query_getUsers(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*User)
+	res := resTmp.(*UserPage)
 	fc.Result = res
-	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserᚄ(ctx, field.Selections, res)
+	return ec.marshalNUserPage2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getUsers(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getUsers(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -8187,25 +8743,24 @@ func (ec *executionContext) fieldContext_Query_getUsers(_ context.Context, field
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "userID":
-				return ec.fieldContext_User_userID(ctx, field)
-			case "googleId":
-				return ec.fieldContext_User_googleId(ctx, field)
-			case "name":
-				return ec.fieldContext_User_name(ctx, field)
-			case "email":
-				return ec.fieldContext_User_email(ctx, field)
-			case "phone":
-				return ec.fieldContext_User_phone(ctx, field)
-			case "role":
-				return ec.fieldContext_User_role(ctx, field)
-			case "password":
-				return ec.fieldContext_User_password(ctx, field)
-			case "campaigns":
-				return ec.fieldContext_User_campaigns(ctx, field)
+			case "items":
+				return ec.fieldContext_UserPage_items(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_UserPage_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type UserPage", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getUsers_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8294,7 +8849,7 @@ func (ec *executionContext) _Query_getCampaigns(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetCampaigns(rctx)
+		return ec.resolvers.Query().GetCampaigns(rctx, fc.Args["filter"].(*CampaignFilter), fc.Args["pagination"].(*PaginationInput), fc.Args["sort"].(*CampaignSortInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8306,12 +8861,12 @@ func (ec *executionContext) _Query_getCampaigns(ctx context.Context, field graph
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*Campaign)
+	res := resTmp.(*CampaignPage)
 	fc.Result = res
-	return ec.marshalNCampaign2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignᚄ(ctx, field.Selections, res)
+	return ec.marshalNCampaignPage2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getCampaigns(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getCampaigns(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -8319,23 +8874,24 @@ func (ec *executionContext) fieldContext_Query_getCampaigns(_ context.Context, f
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "campaignID":
-				return ec.fieldContext_Campaign_campaignID(ctx, field)
-			case "campaignName":
-				return ec.fieldContext_Campaign_campaignName(ctx, field)
-			case "campaignCountry":
-				return ec.fieldContext_Campaign_campaignCountry(ctx, field)
-			case "campaignRegion":
-				return ec.fieldContext_Campaign_campaignRegion(ctx, field)
-			case "industryTargeted":
-				return ec.fieldContext_Campaign_industryTargeted(ctx, field)
-			case "users":
-				return ec.fieldContext_Campaign_users(ctx, field)
-			case "leads":
-				return ec.fieldContext_Campaign_leads(ctx, field)
+			case "items":
+				return ec.fieldContext_CampaignPage_items(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_CampaignPage_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Campaign", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type CampaignPage", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getCampaigns_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8422,7 +8978,7 @@ func (ec *executionContext) _Query_getAllLeads(ctx context.Context, field graphq
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetAllLeads(rctx)
+		return ec.resolvers.Query().GetAllLeads(rctx, fc.Args["filter"].(*LeadFilter), fc.Args["pagination"].(*PaginationInput), fc.Args["sort"].(*LeadSortInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -8434,12 +8990,12 @@ func (ec *executionContext) _Query_getAllLeads(ctx context.Context, field graphq
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*Lead)
+	res := resTmp.(*LeadPage)
 	fc.Result = res
-	return ec.marshalNLead2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadᚄ(ctx, field.Selections, res)
+	return ec.marshalNLeadPage2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadPage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_getAllLeads(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_getAllLeads(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -8447,43 +9003,24 @@ func (ec *executionContext) fieldContext_Query_getAllLeads(_ context.Context, fi
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "leadID":
-				return ec.fieldContext_Lead_leadID(ctx, field)
-			case "firstName":
-				return ec.fieldContext_Lead_firstName(ctx, field)
-			case "lastName":
-				return ec.fieldContext_Lead_lastName(ctx, field)
-			case "email":
-				return ec.fieldContext_Lead_email(ctx, field)
-			case "linkedIn":
-				return ec.fieldContext_Lead_linkedIn(ctx, field)
-			case "country":
-				return ec.fieldContext_Lead_country(ctx, field)
-			case "phone":
-				return ec.fieldContext_Lead_phone(ctx, field)
-			case "leadSource":
-				return ec.fieldContext_Lead_leadSource(ctx, field)
-			case "initialContactDate":
-				return ec.fieldContext_Lead_initialContactDate(ctx, field)
-			case "leadCreatedBy":
-				return ec.fieldContext_Lead_leadCreatedBy(ctx, field)
-			case "leadAssignedTo":
-				return ec.fieldContext_Lead_leadAssignedTo(ctx, field)
-			case "leadStage":
-				return ec.fieldContext_Lead_leadStage(ctx, field)
-			case "leadNotes":
-				return ec.fieldContext_Lead_leadNotes(ctx, field)
-			case "leadPriority":
-				return ec.fieldContext_Lead_leadPriority(ctx, field)
-			case "organization":
-				return ec.fieldContext_Lead_organization(ctx, field)
-			case "campaign":
-				return ec.fieldContext_Lead_campaign(ctx, field)
-			case "activities":
-				return ec.fieldContext_Lead_activities(ctx, field)
+			case "items":
+				return ec.fieldContext_LeadPage_items(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_LeadPage_totalCount(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type Lead", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type LeadPage", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getAllLeads_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -10545,6 +11082,112 @@ func (ec *executionContext) fieldContext_User_campaigns(_ context.Context, field
 				return ec.fieldContext_Campaign_leads(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Campaign", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPage_items(ctx context.Context, field graphql.CollectedField, obj *UserPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserPage_items(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Items, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*User)
+	fc.Result = res
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserPage_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "userID":
+				return ec.fieldContext_User_userID(ctx, field)
+			case "googleId":
+				return ec.fieldContext_User_googleId(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "phone":
+				return ec.fieldContext_User_phone(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "password":
+				return ec.fieldContext_User_password(ctx, field)
+			case "campaigns":
+				return ec.fieldContext_User_campaigns(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _UserPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *UserPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_UserPage_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int32)
+	fc.Result = res
+	return ec.marshalNInt2int32(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_UserPage_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "UserPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13255,6 +13898,74 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputCampaignFilter(ctx context.Context, obj any) (CampaignFilter, error) {
+	var it CampaignFilter
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"campaignName", "campaignCountry"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "campaignName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("campaignName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CampaignName = data
+		case "campaignCountry":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("campaignCountry"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CampaignCountry = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCampaignSortInput(ctx context.Context, obj any) (CampaignSortInput, error) {
+	var it CampaignSortInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"field", "order"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNCampaignSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignSortField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		case "order":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+			data, err := ec.unmarshalNSortOrder2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐSortOrder(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Order = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateActivityInput(ctx context.Context, obj any) (CreateActivityInput, error) {
 	var it CreateActivityInput
 	asMap := map[string]any{}
@@ -14009,6 +14720,74 @@ func (ec *executionContext) unmarshalInputCreateVendorInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputLeadFilter(ctx context.Context, obj any) (LeadFilter, error) {
+	var it LeadFilter
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "email"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputLeadSortInput(ctx context.Context, obj any) (LeadSortInput, error) {
+	var it LeadSortInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"field", "order"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNLeadSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadSortField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		case "order":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+			data, err := ec.unmarshalNSortOrder2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐSortOrder(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Order = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPaginationInput(ctx context.Context, obj any) (PaginationInput, error) {
 	var it PaginationInput
 	asMap := map[string]any{}
@@ -14547,6 +15326,88 @@ func (ec *executionContext) unmarshalInputUpdateVendorInput(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputUserFilter(ctx context.Context, obj any) (UserFilter, error) {
+	var it UserFilter
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "email", "role", "search"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "email":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Email = data
+		case "role":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Role = data
+		case "search":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("search"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Search = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserSortInput(ctx context.Context, obj any) (UserSortInput, error) {
+	var it UserSortInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"field", "order"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "field":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
+			data, err := ec.unmarshalNUserSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserSortField(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Field = data
+		case "order":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("order"))
+			data, err := ec.unmarshalNSortOrder2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐSortOrder(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Order = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputVendorFilter(ctx context.Context, obj any) (VendorFilter, error) {
 	var it VendorFilter
 	asMap := map[string]any{}
@@ -14831,6 +15692,50 @@ func (ec *executionContext) _Campaign(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var campaignPageImplementors = []string{"CampaignPage"}
+
+func (ec *executionContext) _CampaignPage(ctx context.Context, sel ast.SelectionSet, obj *CampaignPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, campaignPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CampaignPage")
+		case "items":
+			out.Values[i] = ec._CampaignPage_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._CampaignPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var contactImplementors = []string{"Contact"}
 
 func (ec *executionContext) _Contact(ctx context.Context, sel ast.SelectionSet, obj *Contact) graphql.Marshaler {
@@ -15061,6 +15966,50 @@ func (ec *executionContext) _Lead(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "activities":
 			out.Values[i] = ec._Lead_activities(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var leadPageImplementors = []string{"LeadPage"}
+
+func (ec *executionContext) _LeadPage(ctx context.Context, sel ast.SelectionSet, obj *LeadPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, leadPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LeadPage")
+		case "items":
+			out.Values[i] = ec._LeadPage_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._LeadPage_totalCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -16065,6 +17014,50 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 	return out
 }
 
+var userPageImplementors = []string{"UserPage"}
+
+func (ec *executionContext) _UserPage(ctx context.Context, sel ast.SelectionSet, obj *UserPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("UserPage")
+		case "items":
+			out.Values[i] = ec._UserPage_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._UserPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var vendorImplementors = []string{"Vendor"}
 
 func (ec *executionContext) _Vendor(ctx context.Context, sel ast.SelectionSet, obj *Vendor) graphql.Marshaler {
@@ -16682,6 +17675,30 @@ func (ec *executionContext) marshalNCampaign2ᚖgithubᚗcomᚋZenithiveᚋitᚑ
 	return ec._Campaign(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNCampaignPage2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignPage(ctx context.Context, sel ast.SelectionSet, v CampaignPage) graphql.Marshaler {
+	return ec._CampaignPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCampaignPage2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignPage(ctx context.Context, sel ast.SelectionSet, v *CampaignPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CampaignPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNCampaignSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignSortField(ctx context.Context, v any) (CampaignSortField, error) {
+	var res CampaignSortField
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCampaignSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignSortField(ctx context.Context, sel ast.SelectionSet, v CampaignSortField) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) marshalNContact2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐContactᚄ(ctx context.Context, sel ast.SelectionSet, v []*Contact) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -16898,6 +17915,20 @@ func (ec *executionContext) marshalNLead2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrm�
 	return ec._Lead(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNLeadPage2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadPage(ctx context.Context, sel ast.SelectionSet, v LeadPage) graphql.Marshaler {
+	return ec._LeadPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLeadPage2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadPage(ctx context.Context, sel ast.SelectionSet, v *LeadPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._LeadPage(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNLeadPriority2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadPriority(ctx context.Context, v any) (LeadPriority, error) {
 	var res LeadPriority
 	err := res.UnmarshalGQL(v)
@@ -16905,6 +17936,16 @@ func (ec *executionContext) unmarshalNLeadPriority2githubᚗcomᚋZenithiveᚋit
 }
 
 func (ec *executionContext) marshalNLeadPriority2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadPriority(ctx context.Context, sel ast.SelectionSet, v LeadPriority) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNLeadSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadSortField(ctx context.Context, v any) (LeadSortField, error) {
+	var res LeadSortField
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNLeadSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadSortField(ctx context.Context, sel ast.SelectionSet, v LeadSortField) graphql.Marshaler {
 	return v
 }
 
@@ -17358,6 +18399,20 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrm�
 	return ec._User(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNUserPage2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserPage(ctx context.Context, sel ast.SelectionSet, v UserPage) graphql.Marshaler {
+	return ec._UserPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUserPage2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserPage(ctx context.Context, sel ast.SelectionSet, v *UserPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._UserPage(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNUserRole2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserRole(ctx context.Context, v any) (UserRole, error) {
 	var res UserRole
 	err := res.UnmarshalGQL(v)
@@ -17365,6 +18420,16 @@ func (ec *executionContext) unmarshalNUserRole2githubᚗcomᚋZenithiveᚋitᚑc
 }
 
 func (ec *executionContext) marshalNUserRole2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserRole(ctx context.Context, sel ast.SelectionSet, v UserRole) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNUserSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserSortField(ctx context.Context, v any) (UserSortField, error) {
+	var res UserSortField
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNUserSortField2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserSortField(ctx context.Context, sel ast.SelectionSet, v UserSortField) graphql.Marshaler {
 	return v
 }
 
@@ -17756,6 +18821,22 @@ func (ec *executionContext) marshalOCampaign2ᚖgithubᚗcomᚋZenithiveᚋitᚑ
 	return ec._Campaign(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOCampaignFilter2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignFilter(ctx context.Context, v any) (*CampaignFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCampaignFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOCampaignSortInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCampaignSortInput(ctx context.Context, v any) (*CampaignSortInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputCampaignSortInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOFloat2ᚖfloat64(ctx context.Context, v any) (*float64, error) {
 	if v == nil {
 		return nil, nil
@@ -17831,6 +18912,22 @@ func (ec *executionContext) marshalOLead2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrm�
 		return graphql.Null
 	}
 	return ec._Lead(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOLeadFilter2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadFilter(ctx context.Context, v any) (*LeadFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLeadFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOLeadSortInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐLeadSortInput(ctx context.Context, v any) (*LeadSortInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputLeadSortInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOPaginationInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐPaginationInput(ctx context.Context, v any) (*PaginationInput, error) {
@@ -17935,6 +19032,14 @@ func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrm�
 	return ec._User(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOUserFilter2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserFilter(ctx context.Context, v any) (*UserFilter, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserFilter(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOUserRole2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserRole(ctx context.Context, v any) (*UserRole, error) {
 	if v == nil {
 		return nil, nil
@@ -17949,6 +19054,14 @@ func (ec *executionContext) marshalOUserRole2ᚖgithubᚗcomᚋZenithiveᚋitᚑ
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) unmarshalOUserSortInput2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUserSortInput(ctx context.Context, v any) (*UserSortInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserSortInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOVendor2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐVendor(ctx context.Context, sel ast.SelectionSet, v *Vendor) graphql.Marshaler {
