@@ -126,6 +126,7 @@ type ComplexityRoot struct {
 		AddUserToCampaign      func(childComplexity int, userID string, campaignID string) int
 		CreateActivity         func(childComplexity int, input CreateActivityInput) int
 		CreateCampaign         func(childComplexity int, input CreateCampaignInput) int
+		CreateCaseStudy        func(childComplexity int, input CreateCaseStudyInput) int
 		CreateDeal             func(childComplexity int, input CreateDealInput) int
 		CreateLead             func(childComplexity int, input CreateLeadInput) int
 		CreateLeadWithActivity func(childComplexity int, input CreateLeadWithActivityInput) int
@@ -134,6 +135,7 @@ type ComplexityRoot struct {
 		CreateUser             func(childComplexity int, input CreateUserInput) int
 		CreateVendor           func(childComplexity int, input CreateVendorInput) int
 		DeleteActivity         func(childComplexity int, activityID string) int
+		DeleteCaseStudy        func(childComplexity int, caseStudyID string) int
 		DeleteLead             func(childComplexity int, leadID string) int
 		DeleteResourceProfile  func(childComplexity int, id string) int
 		DeleteUser             func(childComplexity int, userID string) int
@@ -141,6 +143,7 @@ type ComplexityRoot struct {
 		Login                  func(childComplexity int, email string, password string) int
 		RemoveUserFromCampaign func(childComplexity int, userID string, campaignID string) int
 		UpdateActivity         func(childComplexity int, activityID string, input UpdateActivityInput) int
+		UpdateCaseStudy        func(childComplexity int, caseStudyID string, input UpdateCaseStudyInput) int
 		UpdateLead             func(childComplexity int, leadID string, input UpdateLeadInput) int
 		UpdateResourceProfile  func(childComplexity int, id string, input UpdateResourceProfileInput) int
 		UpdateUser             func(childComplexity int, userID string, input UpdateUserInput) int
@@ -178,9 +181,11 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		GetAllCaseStudy     func(childComplexity int) int
 		GetAllLeads         func(childComplexity int, filter *LeadFilter, pagination *PaginationInput, sort *LeadSortInput) int
 		GetCampaign         func(childComplexity int, campaignID string) int
 		GetCampaigns        func(childComplexity int, filter *CampaignFilter, pagination *PaginationInput, sort *CampaignSortInput) int
+		GetOneCaseStudy     func(childComplexity int, caseStudyID string) int
 		GetOneLead          func(childComplexity int, leadID string) int
 		GetOrganizationByID func(childComplexity int, id string) int
 		GetOrganizations    func(childComplexity int) int
@@ -259,6 +264,18 @@ type ComplexityRoot struct {
 		Items      func(childComplexity int) int
 		TotalCount func(childComplexity int) int
 	}
+
+	CaseStudy struct {
+		CaseStudyID     func(childComplexity int) int
+		ClientName      func(childComplexity int) int
+		Document        func(childComplexity int) int
+		IndustryTarget  func(childComplexity int) int
+		KeyOutcomes     func(childComplexity int) int
+		ProjectDuration func(childComplexity int) int
+		ProjectName     func(childComplexity int) int
+		Tags            func(childComplexity int) int
+		TechStack       func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
@@ -284,6 +301,9 @@ type MutationResolver interface {
 	CreateVendor(ctx context.Context, input CreateVendorInput) (*Vendor, error)
 	UpdateVendor(ctx context.Context, id string, input UpdateVendorInput) (*Vendor, error)
 	DeleteVendor(ctx context.Context, id string) (*Vendor, error)
+	CreateCaseStudy(ctx context.Context, input CreateCaseStudyInput) (*CaseStudy, error)
+	UpdateCaseStudy(ctx context.Context, caseStudyID string, input UpdateCaseStudyInput) (*CaseStudy, error)
+	DeleteCaseStudy(ctx context.Context, caseStudyID string) (*CaseStudy, error)
 }
 type QueryResolver interface {
 	GetUsers(ctx context.Context, filter *UserFilter, pagination *PaginationInput, sort *UserSortInput) (*UserPage, error)
@@ -299,6 +319,8 @@ type QueryResolver interface {
 	GetVendors(ctx context.Context, filter *VendorFilter, pagination *PaginationInput, sort *VendorSortInput) (*VendorPage, error)
 	GetResourceProfile(ctx context.Context, id string) (*ResourceProfile, error)
 	GetVendor(ctx context.Context, id string) (*Vendor, error)
+	GetAllCaseStudy(ctx context.Context) ([]*CaseStudy, error)
+	GetOneCaseStudy(ctx context.Context, caseStudyID string) (*CaseStudy, error)
 }
 
 type executableSchema struct {
@@ -727,6 +749,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.CreateCampaign(childComplexity, args["input"].(CreateCampaignInput)), true
 
+	case "Mutation.createCaseStudy":
+		if e.complexity.Mutation.CreateCaseStudy == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createCaseStudy_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateCaseStudy(childComplexity, args["input"].(CreateCaseStudyInput)), true
+
 	case "Mutation.createDeal":
 		if e.complexity.Mutation.CreateDeal == nil {
 			break
@@ -823,6 +857,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DeleteActivity(childComplexity, args["activity_id"].(string)), true
 
+	case "Mutation.deleteCaseStudy":
+		if e.complexity.Mutation.DeleteCaseStudy == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteCaseStudy_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteCaseStudy(childComplexity, args["caseStudyID"].(string)), true
+
 	case "Mutation.deleteLead":
 		if e.complexity.Mutation.DeleteLead == nil {
 			break
@@ -906,6 +952,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateActivity(childComplexity, args["activity_id"].(string), args["input"].(UpdateActivityInput)), true
+
+	case "Mutation.updateCaseStudy":
+		if e.complexity.Mutation.UpdateCaseStudy == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateCaseStudy_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateCaseStudy(childComplexity, args["caseStudyID"].(string), args["input"].(UpdateCaseStudyInput)), true
 
 	case "Mutation.updateLead":
 		if e.complexity.Mutation.UpdateLead == nil {
@@ -1102,6 +1160,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.PerformanceRating.VendorID(childComplexity), true
 
+	case "Query.getAllCaseStudy":
+		if e.complexity.Query.GetAllCaseStudy == nil {
+			break
+		}
+
+		return e.complexity.Query.GetAllCaseStudy(childComplexity), true
+
 	case "Query.getAllLeads":
 		if e.complexity.Query.GetAllLeads == nil {
 			break
@@ -1137,6 +1202,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.GetCampaigns(childComplexity, args["filter"].(*CampaignFilter), args["pagination"].(*PaginationInput), args["sort"].(*CampaignSortInput)), true
+
+	case "Query.getOneCaseStudy":
+		if e.complexity.Query.GetOneCaseStudy == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getOneCaseStudy_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetOneCaseStudy(childComplexity, args["caseStudyID"].(string)), true
 
 	case "Query.getOneLead":
 		if e.complexity.Query.GetOneLead == nil {
@@ -1570,6 +1647,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.VendorPage.TotalCount(childComplexity), true
 
+	case "caseStudy.caseStudyID":
+		if e.complexity.CaseStudy.CaseStudyID == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.CaseStudyID(childComplexity), true
+
+	case "caseStudy.clientName":
+		if e.complexity.CaseStudy.ClientName == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.ClientName(childComplexity), true
+
+	case "caseStudy.document":
+		if e.complexity.CaseStudy.Document == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.Document(childComplexity), true
+
+	case "caseStudy.industryTarget":
+		if e.complexity.CaseStudy.IndustryTarget == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.IndustryTarget(childComplexity), true
+
+	case "caseStudy.keyOutcomes":
+		if e.complexity.CaseStudy.KeyOutcomes == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.KeyOutcomes(childComplexity), true
+
+	case "caseStudy.projectDuration":
+		if e.complexity.CaseStudy.ProjectDuration == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.ProjectDuration(childComplexity), true
+
+	case "caseStudy.projectName":
+		if e.complexity.CaseStudy.ProjectName == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.ProjectName(childComplexity), true
+
+	case "caseStudy.tags":
+		if e.complexity.CaseStudy.Tags == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.Tags(childComplexity), true
+
+	case "caseStudy.techStack":
+		if e.complexity.CaseStudy.TechStack == nil {
+			break
+		}
+
+		return e.complexity.CaseStudy.TechStack(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -1582,6 +1722,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCampaignSortInput,
 		ec.unmarshalInputCreateActivityInput,
 		ec.unmarshalInputCreateCampaignInput,
+		ec.unmarshalInputCreateCaseStudyInput,
 		ec.unmarshalInputCreateDealInput,
 		ec.unmarshalInputCreateLeadInput,
 		ec.unmarshalInputCreateLeadWithActivityInput,
@@ -1595,6 +1736,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputResourceProfileFilter,
 		ec.unmarshalInputResourceProfileSortInput,
 		ec.unmarshalInputUpdateActivityInput,
+		ec.unmarshalInputUpdateCaseStudyInput,
 		ec.unmarshalInputUpdateLeadInput,
 		ec.unmarshalInputUpdateResourceProfileInput,
 		ec.unmarshalInputUpdateUserInput,
@@ -1738,6 +1880,9 @@ var sources = []*ast.Source{
   ): VendorPage!
   getResourceProfile(id: ID!): ResourceProfile
   getVendor(id: ID!): Vendor
+
+  getAllCaseStudy: [caseStudy!]!
+  getOneCaseStudy(caseStudyID: ID!): caseStudy
 }
 
 type Mutation {
@@ -1774,6 +1919,10 @@ type Mutation {
   createVendor(input: CreateVendorInput!): Vendor!
   updateVendor(id: ID!, input: UpdateVendorInput!): Vendor!
   deleteVendor(id: ID!): Vendor!
+
+  createCaseStudy(input: CreateCaseStudyInput!): caseStudy!
+  updateCaseStudy(caseStudyID: ID!, input: UpdateCaseStudyInput!): caseStudy!
+  deleteCaseStudy(caseStudyID: ID!): caseStudy!
 }
 
 enum UserRole {
@@ -1862,6 +2011,18 @@ type Activity {
   participantDetails: String!
   followUpActions: String!
   leadId: ID!
+}
+
+type caseStudy{
+  caseStudyID: ID!
+  projectName: String!
+  clientName: String!
+  techStack: String!
+  projectDuration: String!
+  keyOutcomes: String!
+  industryTarget: String!
+  tags: String!
+  document: String!
 }
 
 type Deal {
@@ -1987,6 +2148,28 @@ input UpdateActivityInput {
   contentNotes: String
   participantDetails: String
   followUpActions: String
+}
+
+input CreateCaseStudyInput{
+  projectName: String!
+  clientName: String!
+  techStack: String!
+  projectDuration: String!
+  keyOutcomes: String!
+  industryTarget: String!
+  tags: String!
+  document: String!
+}
+
+input UpdateCaseStudyInput{
+  projectName: String!
+  clientName: String!
+  techStack: String!
+  projectDuration: String!
+  keyOutcomes: String!
+  industryTarget: String!
+  tags: String!
+  document: String!
 }
 
 input CreateOrganizationInput {
@@ -2366,6 +2549,29 @@ func (ec *executionContext) field_Mutation_createCampaign_argsInput(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_createCaseStudy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createCaseStudy_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createCaseStudy_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (CreateCaseStudyInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNCreateCaseStudyInput2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCreateCaseStudyInput(ctx, tmp)
+	}
+
+	var zeroVal CreateCaseStudyInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_createDeal_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2543,6 +2749,29 @@ func (ec *executionContext) field_Mutation_deleteActivity_argsActivityID(
 ) (string, error) {
 	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("activity_id"))
 	if tmp, ok := rawArgs["activity_id"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteCaseStudy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_deleteCaseStudy_argsCaseStudyID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["caseStudyID"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_deleteCaseStudy_argsCaseStudyID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("caseStudyID"))
+	if tmp, ok := rawArgs["caseStudyID"]; ok {
 		return ec.unmarshalNID2string(ctx, tmp)
 	}
 
@@ -2762,6 +2991,47 @@ func (ec *executionContext) field_Mutation_updateActivity_argsInput(
 	}
 
 	var zeroVal UpdateActivityInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateCaseStudy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateCaseStudy_argsCaseStudyID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["caseStudyID"] = arg0
+	arg1, err := ec.field_Mutation_updateCaseStudy_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateCaseStudy_argsCaseStudyID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("caseStudyID"))
+	if tmp, ok := rawArgs["caseStudyID"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateCaseStudy_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (UpdateCaseStudyInput, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateCaseStudyInput2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUpdateCaseStudyInput(ctx, tmp)
+	}
+
+	var zeroVal UpdateCaseStudyInput
 	return zeroVal, nil
 }
 
@@ -3090,6 +3360,29 @@ func (ec *executionContext) field_Query_getCampaigns_argsSort(
 	}
 
 	var zeroVal *CampaignSortInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_getOneCaseStudy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Query_getOneCaseStudy_argsCaseStudyID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["caseStudyID"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Query_getOneCaseStudy_argsCaseStudyID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("caseStudyID"))
+	if tmp, ok := rawArgs["caseStudyID"]; ok {
+		return ec.unmarshalNID2string(ctx, tmp)
+	}
+
+	var zeroVal string
 	return zeroVal, nil
 }
 
@@ -7753,6 +8046,231 @@ func (ec *executionContext) fieldContext_Mutation_deleteVendor(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createCaseStudy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createCaseStudy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateCaseStudy(rctx, fc.Args["input"].(CreateCaseStudyInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*CaseStudy)
+	fc.Result = res
+	return ec.marshalNcaseStudy2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createCaseStudy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "caseStudyID":
+				return ec.fieldContext_caseStudy_caseStudyID(ctx, field)
+			case "projectName":
+				return ec.fieldContext_caseStudy_projectName(ctx, field)
+			case "clientName":
+				return ec.fieldContext_caseStudy_clientName(ctx, field)
+			case "techStack":
+				return ec.fieldContext_caseStudy_techStack(ctx, field)
+			case "projectDuration":
+				return ec.fieldContext_caseStudy_projectDuration(ctx, field)
+			case "keyOutcomes":
+				return ec.fieldContext_caseStudy_keyOutcomes(ctx, field)
+			case "industryTarget":
+				return ec.fieldContext_caseStudy_industryTarget(ctx, field)
+			case "tags":
+				return ec.fieldContext_caseStudy_tags(ctx, field)
+			case "document":
+				return ec.fieldContext_caseStudy_document(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type caseStudy", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createCaseStudy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateCaseStudy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateCaseStudy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateCaseStudy(rctx, fc.Args["caseStudyID"].(string), fc.Args["input"].(UpdateCaseStudyInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*CaseStudy)
+	fc.Result = res
+	return ec.marshalNcaseStudy2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateCaseStudy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "caseStudyID":
+				return ec.fieldContext_caseStudy_caseStudyID(ctx, field)
+			case "projectName":
+				return ec.fieldContext_caseStudy_projectName(ctx, field)
+			case "clientName":
+				return ec.fieldContext_caseStudy_clientName(ctx, field)
+			case "techStack":
+				return ec.fieldContext_caseStudy_techStack(ctx, field)
+			case "projectDuration":
+				return ec.fieldContext_caseStudy_projectDuration(ctx, field)
+			case "keyOutcomes":
+				return ec.fieldContext_caseStudy_keyOutcomes(ctx, field)
+			case "industryTarget":
+				return ec.fieldContext_caseStudy_industryTarget(ctx, field)
+			case "tags":
+				return ec.fieldContext_caseStudy_tags(ctx, field)
+			case "document":
+				return ec.fieldContext_caseStudy_document(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type caseStudy", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateCaseStudy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteCaseStudy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteCaseStudy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteCaseStudy(rctx, fc.Args["caseStudyID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*CaseStudy)
+	fc.Result = res
+	return ec.marshalNcaseStudy2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteCaseStudy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "caseStudyID":
+				return ec.fieldContext_caseStudy_caseStudyID(ctx, field)
+			case "projectName":
+				return ec.fieldContext_caseStudy_projectName(ctx, field)
+			case "clientName":
+				return ec.fieldContext_caseStudy_clientName(ctx, field)
+			case "techStack":
+				return ec.fieldContext_caseStudy_techStack(ctx, field)
+			case "projectDuration":
+				return ec.fieldContext_caseStudy_projectDuration(ctx, field)
+			case "keyOutcomes":
+				return ec.fieldContext_caseStudy_keyOutcomes(ctx, field)
+			case "industryTarget":
+				return ec.fieldContext_caseStudy_industryTarget(ctx, field)
+			case "tags":
+				return ec.fieldContext_caseStudy_tags(ctx, field)
+			case "document":
+				return ec.fieldContext_caseStudy_document(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type caseStudy", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteCaseStudy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Organization_ID(ctx context.Context, field graphql.CollectedField, obj *Organization) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Organization_ID(ctx, field)
 	if err != nil {
@@ -9589,6 +10107,142 @@ func (ec *executionContext) fieldContext_Query_getVendor(ctx context.Context, fi
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_getVendor_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getAllCaseStudy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getAllCaseStudy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetAllCaseStudy(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*CaseStudy)
+	fc.Result = res
+	return ec.marshalNcaseStudy2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudyᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getAllCaseStudy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "caseStudyID":
+				return ec.fieldContext_caseStudy_caseStudyID(ctx, field)
+			case "projectName":
+				return ec.fieldContext_caseStudy_projectName(ctx, field)
+			case "clientName":
+				return ec.fieldContext_caseStudy_clientName(ctx, field)
+			case "techStack":
+				return ec.fieldContext_caseStudy_techStack(ctx, field)
+			case "projectDuration":
+				return ec.fieldContext_caseStudy_projectDuration(ctx, field)
+			case "keyOutcomes":
+				return ec.fieldContext_caseStudy_keyOutcomes(ctx, field)
+			case "industryTarget":
+				return ec.fieldContext_caseStudy_industryTarget(ctx, field)
+			case "tags":
+				return ec.fieldContext_caseStudy_tags(ctx, field)
+			case "document":
+				return ec.fieldContext_caseStudy_document(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type caseStudy", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getOneCaseStudy(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getOneCaseStudy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetOneCaseStudy(rctx, fc.Args["caseStudyID"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*CaseStudy)
+	fc.Result = res
+	return ec.marshalOcaseStudy2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudy(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getOneCaseStudy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "caseStudyID":
+				return ec.fieldContext_caseStudy_caseStudyID(ctx, field)
+			case "projectName":
+				return ec.fieldContext_caseStudy_projectName(ctx, field)
+			case "clientName":
+				return ec.fieldContext_caseStudy_clientName(ctx, field)
+			case "techStack":
+				return ec.fieldContext_caseStudy_techStack(ctx, field)
+			case "projectDuration":
+				return ec.fieldContext_caseStudy_projectDuration(ctx, field)
+			case "keyOutcomes":
+				return ec.fieldContext_caseStudy_keyOutcomes(ctx, field)
+			case "industryTarget":
+				return ec.fieldContext_caseStudy_industryTarget(ctx, field)
+			case "tags":
+				return ec.fieldContext_caseStudy_tags(ctx, field)
+			case "document":
+				return ec.fieldContext_caseStudy_document(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type caseStudy", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getOneCaseStudy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -13894,6 +14548,402 @@ func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _caseStudy_caseStudyID(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_caseStudyID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CaseStudyID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_caseStudyID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _caseStudy_projectName(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_projectName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProjectName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_projectName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _caseStudy_clientName(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_clientName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClientName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_clientName(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _caseStudy_techStack(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_techStack(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TechStack, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_techStack(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _caseStudy_projectDuration(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_projectDuration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProjectDuration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_projectDuration(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _caseStudy_keyOutcomes(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_keyOutcomes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KeyOutcomes, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_keyOutcomes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _caseStudy_industryTarget(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_industryTarget(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IndustryTarget, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_industryTarget(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _caseStudy_tags(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_tags(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tags, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_tags(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _caseStudy_document(ctx context.Context, field graphql.CollectedField, obj *CaseStudy) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_caseStudy_document(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Document, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_caseStudy_document(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "caseStudy",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -14077,6 +15127,82 @@ func (ec *executionContext) unmarshalInputCreateCampaignInput(ctx context.Contex
 				return it, err
 			}
 			it.IndustryTargeted = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputCreateCaseStudyInput(ctx context.Context, obj any) (CreateCaseStudyInput, error) {
+	var it CreateCaseStudyInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"projectName", "clientName", "techStack", "projectDuration", "keyOutcomes", "industryTarget", "tags", "document"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "projectName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProjectName = data
+		case "clientName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clientName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClientName = data
+		case "techStack":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("techStack"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TechStack = data
+		case "projectDuration":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectDuration"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProjectDuration = data
+		case "keyOutcomes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyOutcomes"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.KeyOutcomes = data
+		case "industryTarget":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("industryTarget"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IndustryTarget = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		case "document":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("document"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Document = data
 		}
 	}
 
@@ -14995,6 +16121,82 @@ func (ec *executionContext) unmarshalInputUpdateActivityInput(ctx context.Contex
 				return it, err
 			}
 			it.FollowUpActions = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUpdateCaseStudyInput(ctx context.Context, obj any) (UpdateCaseStudyInput, error) {
+	var it UpdateCaseStudyInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"projectName", "clientName", "techStack", "projectDuration", "keyOutcomes", "industryTarget", "tags", "document"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "projectName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProjectName = data
+		case "clientName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clientName"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClientName = data
+		case "techStack":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("techStack"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TechStack = data
+		case "projectDuration":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("projectDuration"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ProjectDuration = data
+		case "keyOutcomes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyOutcomes"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.KeyOutcomes = data
+		case "industryTarget":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("industryTarget"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IndustryTarget = data
+		case "tags":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Tags = data
+		case "document":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("document"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Document = data
 		}
 	}
 
@@ -16209,6 +17411,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createCaseStudy":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createCaseStudy(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateCaseStudy":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateCaseStudy(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteCaseStudy":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteCaseStudy(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16708,6 +17931,47 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_getVendor(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getAllCaseStudy":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getAllCaseStudy(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "getOneCaseStudy":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getOneCaseStudy(ctx, field)
 				return res
 			}
 
@@ -17526,6 +18790,85 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var caseStudyImplementors = []string{"caseStudy"}
+
+func (ec *executionContext) _caseStudy(ctx context.Context, sel ast.SelectionSet, obj *CaseStudy) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, caseStudyImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("caseStudy")
+		case "caseStudyID":
+			out.Values[i] = ec._caseStudy_caseStudyID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "projectName":
+			out.Values[i] = ec._caseStudy_projectName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clientName":
+			out.Values[i] = ec._caseStudy_clientName(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "techStack":
+			out.Values[i] = ec._caseStudy_techStack(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "projectDuration":
+			out.Values[i] = ec._caseStudy_projectDuration(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "keyOutcomes":
+			out.Values[i] = ec._caseStudy_keyOutcomes(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "industryTarget":
+			out.Values[i] = ec._caseStudy_industryTarget(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tags":
+			out.Values[i] = ec._caseStudy_tags(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "document":
+			out.Values[i] = ec._caseStudy_document(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
@@ -17760,6 +19103,11 @@ func (ec *executionContext) unmarshalNCreateActivityInput2githubᚗcomᚋZenithi
 
 func (ec *executionContext) unmarshalNCreateCampaignInput2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCreateCampaignInput(ctx context.Context, v any) (CreateCampaignInput, error) {
 	res, err := ec.unmarshalInputCreateCampaignInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateCaseStudyInput2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCreateCaseStudyInput(ctx context.Context, v any) (CreateCaseStudyInput, error) {
+	res, err := ec.unmarshalInputCreateCaseStudyInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
@@ -18321,6 +19669,11 @@ func (ec *executionContext) unmarshalNUpdateActivityInput2githubᚗcomᚋZenithi
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNUpdateCaseStudyInput2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUpdateCaseStudyInput(ctx context.Context, v any) (UpdateCaseStudyInput, error) {
+	res, err := ec.unmarshalInputUpdateCaseStudyInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNUpdateLeadInput2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐUpdateLeadInput(ctx context.Context, v any) (UpdateLeadInput, error) {
 	res, err := ec.unmarshalInputUpdateLeadInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -18776,6 +20129,64 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNcaseStudy2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudy(ctx context.Context, sel ast.SelectionSet, v CaseStudy) graphql.Marshaler {
+	return ec._caseStudy(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNcaseStudy2ᚕᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudyᚄ(ctx context.Context, sel ast.SelectionSet, v []*CaseStudy) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNcaseStudy2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudy(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNcaseStudy2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudy(ctx context.Context, sel ast.SelectionSet, v *CaseStudy) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._caseStudy(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNdealStatus2githubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐDealStatus(ctx context.Context, v any) (DealStatus, error) {
@@ -19303,6 +20714,13 @@ func (ec *executionContext) marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 		return graphql.Null
 	}
 	return ec.___Type(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOcaseStudy2ᚖgithubᚗcomᚋZenithiveᚋitᚑcrmᚑbackendᚋinternalᚋgraphqlᚋgeneratedᚐCaseStudy(ctx context.Context, sel ast.SelectionSet, v *CaseStudy) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._caseStudy(ctx, sel, v)
 }
 
 // endregion ***************************** type.gotpl *****************************

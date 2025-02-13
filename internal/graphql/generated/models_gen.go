@@ -76,6 +76,17 @@ type CreateCampaignInput struct {
 	IndustryTargeted string `json:"industryTargeted"`
 }
 
+type CreateCaseStudyInput struct {
+	ProjectName     string `json:"projectName"`
+	ClientName      string `json:"clientName"`
+	TechStack       string `json:"techStack"`
+	ProjectDuration string `json:"projectDuration"`
+	KeyOutcomes     string `json:"keyOutcomes"`
+	IndustryTarget  string `json:"industryTarget"`
+	Tags            string `json:"tags"`
+	Document        string `json:"document"`
+}
+
 type CreateDealInput struct {
 	DealName            string     `json:"dealName"`
 	LeadID              string     `json:"leadID"`
@@ -311,6 +322,17 @@ type UpdateActivityInput struct {
 	FollowUpActions      *string `json:"followUpActions,omitempty"`
 }
 
+type UpdateCaseStudyInput struct {
+	ProjectName     string `json:"projectName"`
+	ClientName      string `json:"clientName"`
+	TechStack       string `json:"techStack"`
+	ProjectDuration string `json:"projectDuration"`
+	KeyOutcomes     string `json:"keyOutcomes"`
+	IndustryTarget  string `json:"industryTarget"`
+	Tags            string `json:"tags"`
+	Document        string `json:"document"`
+}
+
 type UpdateLeadInput struct {
 	FirstName          *string      `json:"firstName,omitempty"`
 	LastName           *string      `json:"lastName,omitempty"`
@@ -418,6 +440,18 @@ type VendorPage struct {
 type VendorSortInput struct {
 	Field VendorSortField `json:"field"`
 	Order SortOrder       `json:"order"`
+}
+
+type CaseStudy struct {
+	CaseStudyID     string `json:"caseStudyID"`
+	ProjectName     string `json:"projectName"`
+	ClientName      string `json:"clientName"`
+	TechStack       string `json:"techStack"`
+	ProjectDuration string `json:"projectDuration"`
+	KeyOutcomes     string `json:"keyOutcomes"`
+	IndustryTarget  string `json:"industryTarget"`
+	Tags            string `json:"tags"`
+	Document        string `json:"document"`
 }
 
 type CampaignSortField string

@@ -36,6 +36,9 @@ type Query {
   ): VendorPage!
   getResourceProfile(id: ID!): ResourceProfile
   getVendor(id: ID!): Vendor
+
+  getAllCaseStudy: [caseStudy!]!
+  getOneCaseStudy(caseStudyID: ID!): caseStudy
 }
 
 type Mutation {
@@ -72,6 +75,10 @@ type Mutation {
   createVendor(input: CreateVendorInput!): Vendor!
   updateVendor(id: ID!, input: UpdateVendorInput!): Vendor!
   deleteVendor(id: ID!): Vendor!
+
+  createCaseStudy(input: CreateCaseStudyInput!): caseStudy!
+  updateCaseStudy(caseStudyID: ID!, input: UpdateCaseStudyInput!): caseStudy!
+  deleteCaseStudy(caseStudyID: ID!): caseStudy!
 }
 
 enum UserRole {
@@ -160,6 +167,18 @@ type Activity {
   participantDetails: String!
   followUpActions: String!
   leadId: ID!
+}
+
+type caseStudy{
+  caseStudyID: ID!
+  projectName: String!
+  clientName: String!
+  techStack: String!
+  projectDuration: String!
+  keyOutcomes: String!
+  industryTarget: String!
+  tags: String!
+  document: String!
 }
 
 type Deal {
@@ -285,6 +304,28 @@ input UpdateActivityInput {
   contentNotes: String
   participantDetails: String
   followUpActions: String
+}
+
+input CreateCaseStudyInput{
+  projectName: String!
+  clientName: String!
+  techStack: String!
+  projectDuration: String!
+  keyOutcomes: String!
+  industryTarget: String!
+  tags: String!
+  document: String!
+}
+
+input UpdateCaseStudyInput{
+  projectName: String!
+  clientName: String!
+  techStack: String!
+  projectDuration: String!
+  keyOutcomes: String!
+  industryTarget: String!
+  tags: String!
+  document: String!
 }
 
 input CreateOrganizationInput {

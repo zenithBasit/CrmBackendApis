@@ -69,6 +69,19 @@ type User struct {
 	Campaigns []Campaign `gorm:"many2many:campaign_users;joinForeignKey:UserID;joinReferences:CampaignID;constraint:OnDelete:CASCADE;" json:"campaigns"`
 }
 
+type CaseStudy struct {
+    gorm.Model
+    // CaseStudyID    string `gorm:"primaryKey"`
+    ProjectName    string
+    ClientName     string
+    TechStack      string
+    ProjectDuration string
+    KeyOutcomes    string
+    IndustryTarget string
+    Tags          string
+    Document      string
+}
+
 type Organization struct {
 	gorm.Model
 	OrganizationName    string `json:"organizationName"`

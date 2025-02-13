@@ -1176,6 +1176,100 @@ func (r *mutationResolver) DeleteVendor(ctx context.Context, id string) (*genera
 	}, nil
 }
 
+// CreateCaseStudy is the resolver for the createCaseStudy field.
+func (r *mutationResolver) CreateCaseStudy(ctx context.Context, input generated.CreateCaseStudyInput) (*generated.CaseStudy, error) {
+	// panic(fmt.Errorf("not implemented: CreateCaseStudy - createCaseStudy"))
+	if initializers.DB == nil {
+		return nil, fmt.Errorf("database connection is nil")
+	}
+	caseStudy := models.CaseStudy{
+		// CaseStudyID:     uuid.New().String(), // Generate a unique ID
+		ProjectName:     input.ProjectName,
+		ClientName:      input.ClientName,
+		TechStack:       input.TechStack,
+		ProjectDuration: input.ProjectDuration,
+		KeyOutcomes:     input.KeyOutcomes,
+		IndustryTarget:  input.IndustryTarget,
+		Tags:            input.Tags,
+		Document:        input.Document,
+	}
+
+	if err := initializers.DB.Create(&caseStudy).Error; err != nil {
+		return nil, err
+	}
+
+	return &generated.CaseStudy{
+		CaseStudyID:     fmt.Sprintf("%d", caseStudy.ID),
+		ProjectName:     caseStudy.ProjectName,
+		ClientName:      caseStudy.ClientName,
+		TechStack:       caseStudy.TechStack,
+		ProjectDuration: caseStudy.ProjectDuration,
+		KeyOutcomes:     caseStudy.KeyOutcomes,
+		IndustryTarget:  caseStudy.IndustryTarget,
+		Tags:            caseStudy.Tags,
+		Document:        caseStudy.Document,
+	}, nil
+}
+
+// UpdateCaseStudy is the resolver for the updateCaseStudy field.
+func (r *mutationResolver) UpdateCaseStudy(ctx context.Context, caseStudyID string, input generated.UpdateCaseStudyInput) (*generated.CaseStudy, error) {
+	// panic(fmt.Errorf("not implemented: UpdateCaseStudy - updateCaseStudy"))
+	var caseStudy models.CaseStudy
+
+	if err := initializers.DB.First(&caseStudy, "id = ?", caseStudyID).Error; err != nil {
+		return nil, err // Case study not found
+	}
+
+	// Update fields
+	caseStudy.ProjectName = input.ProjectName
+	caseStudy.ClientName = input.ClientName
+	caseStudy.TechStack = input.TechStack
+	caseStudy.ProjectDuration = input.ProjectDuration
+	caseStudy.KeyOutcomes = input.KeyOutcomes
+	caseStudy.IndustryTarget = input.IndustryTarget
+	caseStudy.Tags = input.Tags
+	caseStudy.Document = input.Document
+
+	if err := initializers.DB.Save(&caseStudy).Error; err != nil {
+		return nil, err
+	}
+
+	return &generated.CaseStudy{
+		CaseStudyID:     fmt.Sprintf("%d", caseStudy.ID),
+		ProjectName:     caseStudy.ProjectName,
+		ClientName:      caseStudy.ClientName,
+		TechStack:       caseStudy.TechStack,
+		ProjectDuration: caseStudy.ProjectDuration,
+		KeyOutcomes:     caseStudy.KeyOutcomes,
+		IndustryTarget:  caseStudy.IndustryTarget,
+		Tags:            caseStudy.Tags,
+		Document:        caseStudy.Document,
+	}, nil
+}
+
+// DeleteCaseStudy is the resolver for the deleteCaseStudy field.
+func (r *mutationResolver) DeleteCaseStudy(ctx context.Context, caseStudyID string) (*generated.CaseStudy, error) {
+	// panic(fmt.Errorf("not implemented: DeleteCaseStudy - deleteCaseStudy"))
+	var caseStudy models.CaseStudy
+	if err := initializers.DB.First(&caseStudy, "id = ?", caseStudyID).Error; err != nil {
+		return nil, err // Case study not found
+	}
+	if err := initializers.DB.Delete(&caseStudy).Error; err != nil {
+		return nil, err
+	}
+	return &generated.CaseStudy{
+		CaseStudyID:     fmt.Sprintf("%d", caseStudy.ID),
+		ProjectName:     caseStudy.ProjectName,
+		ClientName:      caseStudy.ClientName,
+		TechStack:       caseStudy.TechStack,
+		ProjectDuration: caseStudy.ProjectDuration,
+		KeyOutcomes:     caseStudy.KeyOutcomes,
+		IndustryTarget:  caseStudy.IndustryTarget,
+		Tags:            caseStudy.Tags,
+		Document:        caseStudy.Document,
+	}, nil
+}
+
 // GetUsers is the resolver for the getUsers field.
 func (r *queryResolver) GetUsers(ctx context.Context, filter *generated.UserFilter, pagination *generated.PaginationInput, sort *generated.UserSortInput) (*generated.UserPage, error) {
 	log.Println("GetUsers called")
@@ -1265,7 +1359,6 @@ func (r *queryResolver) GetUsers(ctx context.Context, filter *generated.UserFilt
 		TotalCount: int32(totalCount),
 	}, nil
 }
-
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, userID string) (*generated.User, error) {
@@ -1362,7 +1455,6 @@ func (r *queryResolver) GetCampaigns(ctx context.Context, filter *generated.Camp
 	}, nil
 }
 
-
 // GetCampaign is the resolver for the getCampaign field.
 func (r *queryResolver) GetCampaign(ctx context.Context, campaignID string) (*generated.Campaign, error) {
 	panic(fmt.Errorf("not implemented: GetCampaign - getCampaign"))
@@ -1418,9 +1510,9 @@ func (r *queryResolver) GetAllLeads(ctx context.Context, filter *generated.LeadF
 	var result []*generated.Lead
 	for _, c := range leads {
 		result = append(result, &generated.Lead{
-			LeadID: c.LeadID,
-			FirstName:   c.FirstName,
-			Email:  c.Email,
+			LeadID:    c.LeadID,
+			FirstName: c.FirstName,
+			Email:     c.Email,
 		})
 	}
 
@@ -1429,7 +1521,6 @@ func (r *queryResolver) GetAllLeads(ctx context.Context, filter *generated.LeadF
 		TotalCount: int32(totalCount),
 	}, nil
 }
-
 
 // GetOneLead is the resolver for the getOneLead field.
 func (r *queryResolver) GetOneLead(ctx context.Context, leadID string) (*generated.Lead, error) {
@@ -1576,7 +1667,6 @@ func (r *queryResolver) GetOrganizationByID(ctx context.Context, id string) (*ge
 		Country:          organization.Country,
 	}, nil
 }
-
 
 // GetResourceProfiles is the resolver for the getResourceProfiles field.
 func (r *queryResolver) GetResourceProfiles(ctx context.Context, filter *generated.ResourceProfileFilter, pagination *generated.PaginationInput, sort *generated.ResourceProfileSortInput) (*generated.ResourceProfilePage, error) {
@@ -1914,6 +2004,16 @@ func (r *queryResolver) GetVendor(ctx context.Context, id string) (*generated.Ve
 		PerformanceRatings: generatedPerformanceRatings,
 		Resources:          generatedResources,
 	}, nil
+}
+
+// GetAllCaseStudy is the resolver for the getAllCaseStudy field.
+func (r *queryResolver) GetAllCaseStudy(ctx context.Context) ([]*generated.CaseStudy, error) {
+	panic(fmt.Errorf("not implemented: GetAllCaseStudy - getAllCaseStudy"))
+}
+
+// GetOneCaseStudy is the resolver for the getOneCaseStudy field.
+func (r *queryResolver) GetOneCaseStudy(ctx context.Context, caseStudyID string) (*generated.CaseStudy, error) {
+	panic(fmt.Errorf("not implemented: GetOneCaseStudy - getOneCaseStudy"))
 }
 
 // Mutation returns generated.MutationResolver implementation.
